@@ -167,6 +167,72 @@ struct CopySyntaxTree : Transformer
 	}
 	~CopySyntaxTree() { };
 };
+struct FoldConstants : Transformer
+{
+	Expression* transformNumber(Number const* number)
+	{
+		Expression* exp = new Number(number->value());
+		return exp;
+	}
+	Expression* transformBinaryOperation(BinaryOperation const* binop)
+	{
+		// 1. Создаем указатели на левое и правое выражение
+		Expression* nleft = (binop->left())->transform(this);
+		Expression* nright = (binop->right())->transform(this);
+		int noperation = binop->operation();
+
+		// 2. Создаем новый объект типа BinaryOperation с новыми указателями
+		BinaryOperation* nbinop = new BinaryOperation(nleft,
+			noperation,
+			// binop->operation(),
+			nright);
+		// 3. Проверяем на приводимость указателей к типу Number
+		Number* nleft_is_number = dynamic_cast<Number*>(nleft);
+		Number* nright_is_number = dynamic_cast<Number*>(nright);
+		if (nleft_is_number && nright_is_number) {
+			// 3.1 Вычисляем значение выражения
+			Expression* result = new Number(binop->evaluate());
+
+			// 3.2 Освобождаем память
+			delete nbinop;
+			// 3.3 Возвращаем результат
+			return result;
+		}
+		else {
+			return nbinop;
+		}
+	}
+	Expression* transformFunctionCall(FunctionCall const* fcall)
+	{
+		// 1. Создаем указатель на аргумент
+		Expression* narg = (fcall->arg())->transform(this);
+		std::string const& nname = fcall->name();
+
+		// 2. Создаем новый объект типа FunctionCall с новым указателем
+		FunctionCall* nfcall = new FunctionCall(nname,narg);
+
+		// 3. Проверяем на приводимость указателя к типу Number
+		Number* narg_is_number = dynamic_cast<Number*>(narg);
+		if (narg_is_number) {
+			// 3.1 Вычисляем значение выражения
+			Expression* result = new Number(fcall->evaluate());
+
+			// 3.2 Освобождаем память
+			delete nfcall;
+			// 3.3 Возвращаем результат
+			return result;
+		}
+		else {
+			return nfcall;
+		}
+	}
+	Expression* transformVariable(Variable const* var)
+	{
+		Expression* exp = new Variable(var->name());
+		return exp;
+	}
+	~FoldConstants() { };
+};
 
 
 int main()
@@ -187,6 +253,9 @@ int main()
 	cout << callAbs->evaluate() << endl;
 	//------------------------------------------------------------------------------
 	*/
+
+
+	/*
 	Number* n32 = new Number(32.0);
 	Number* n16 = new Number(16.0);
 	BinaryOperation* minus = new BinaryOperation(n32, BinaryOperation::MINUS, n16);
@@ -197,6 +266,34 @@ int main()
 	FunctionCall* callAbs = new FunctionCall("abs", mult);
 	CopySyntaxTree CST;
 	Expression* newExpr = callAbs->transform(&CST);
-	std::cout << callAbs->transform(&CST)->print() << std::endl;
+	std::cout << newExpr->print() << std::endl;
+	*/
+	
+	Number* n32 = new Number(32.0);
+	Number* n16 = new Number(16.0);
+	BinaryOperation* minus = new BinaryOperation(n32, BinaryOperation::MINUS,
+		n16);
+	FunctionCall* callSqrt = new FunctionCall("sqrt", minus);
+	Variable* var = new Variable("var");
+	BinaryOperation* mult = new BinaryOperation(var, BinaryOperation::MUL,
+		callSqrt);
+	FunctionCall* callAbs = new FunctionCall("abs", mult);
+	FoldConstants FC;
+	Expression* newExpr2 = callAbs->transform(&FC);
+	//FoldConstants FC;
+	std::cout << newExpr2->print() << std::endl;
 
+	/*
+	Number* n32 = new Number(32.0);
+    Number* n16 = new Number(16.0);
+    BinaryOperation* minus = new BinaryOperation(n32, BinaryOperation::MINUS, n16);
+    FunctionCall* callSqrt = new FunctionCall("sqrt", minus);
+    Variable* var = new Variable("var");
+    BinaryOperation* mult = new BinaryOperation(var, BinaryOperation::MUL, callSqrt);
+    FunctionCall* callAbs = new FunctionCall("abs", mult);
+    CopySyntaxTree CST;
+    std::cout << callAbs->transform(&CST)->print() << std::endl;
+    FoldConstants FC;
+    std::cout << callAbs->transform(&FC)->print() << std::endl;
+	*/
 }
