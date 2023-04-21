@@ -6,13 +6,26 @@ struct Expression //базовая абстрактная структура
 {
     virtual ~Expression() { } //виртуальный деструктор
     virtual double evaluate() const = 0; //абстрактный метод «вычислить»
+    virtual Expression* transform(Transformer* tr) const = 0;
+};
+struct Transformer
+{
+    virtual ~Transformer() {}
+    virtual Expression* transformNumber(Number const*) = 0;
+    virtual Expression* transformBinaryOperation(BinaryOperation const*) = 0;
+    virtual Expression* transformFunctionCall(FunctionCall const*) = 0;
+    virtual Expression* transformVariable(Variable const*) = 0;
 };
 struct Number : Expression // стуктура «Число»
 {
     Number(double value) : value_(value) {} //конструктор
     double value() const { return value_; } // метод чтения значения числа
     double evaluate() const { return value_; } // реализация виртуального метода «вычислить»
-        ~Number() {}//деструктор, тоже виртуальный
+    ~Number() {}//деструктор, тоже виртуальный
+    Expression* transform(Transformer* tr) const
+    {
+        return tr->transformNumber(this);
+    }
 private:
     double value_; // само вещественное число
 };
@@ -50,6 +63,10 @@ struct BinaryOperation : Expression // «Бинарная операция»
         case MUL: return left * right;
         }
     }
+    Expression* transform(Transformer* tr) const
+    {
+        return tr->transformBinaryOperation(this);
+    }
 private:
     Expression const* left_; // указатель на левый операнд
     Expression const* right_; // указатель на правый операнд
@@ -78,8 +95,11 @@ struct FunctionCall : Expression // структура «Вызов функци
         if (name_ == "sqrt")
             return sqrt(arg_->evaluate()); // либо вычисляем корень квадратный
         else return fabs(arg_->evaluate());
-    } // либо модуль — остальные функции
-//запрещены
+    } // либо модуль — остальные функции запрещены
+    Expression* transform(Transformer* tr) const
+    {
+        return tr->transformFunctionCall(this);
+    }
 private:
     std::string const name_; // имя функции
     Expression const* arg_; // указатель на ее аргумент
@@ -93,12 +113,17 @@ struct Variable : Expression // структура «Переменная»
     {
         return 0.0;
     }
+    Expression* transform(Transformer* tr) const
+    {
+        return tr->transformVariable(this);
+    }
 private:
     std::string const name_; // имя переменной
 };
 
 int main()
 {
+    /*
     //------------------------------------------------------------------------------
     Expression* e1 = new Number(1.234);
     Expression* e2 = new Number(-1.234);
@@ -114,6 +139,8 @@ int main()
     Expression* callAbs = new FunctionCall("abs", mult);
     cout << callAbs->evaluate() << endl;
     //------------------------------------------------------------------------------
+    */
+    
 }
 
 
