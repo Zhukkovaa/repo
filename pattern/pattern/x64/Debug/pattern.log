@@ -1,3 +1,3 @@
 ﻿  pattern.cpp
-D:\repo\repo\pattern\pattern\pattern.cpp(52): warning C4715: BinaryOperation::evaluate: значение возвращается не при всех путях выполнения
+D:\repo\repo\pattern\pattern\pattern.cpp(75): warning C4715: BinaryOperation::evaluate: значение возвращается не при всех путях выполнения
   pattern.vcxproj -> D:\repo\repo\pattern\x64\Debug\pattern.exe
